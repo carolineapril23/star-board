@@ -1,0 +1,473 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>星星獎勵榜</title></head><body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 版面：淡薄荷底色上一條白色中央欄(兩側細黑線)，置中標題加點線、雲朵狀分隔、粗線條手繪感插圖。參考 fukufuku.nara.jp 的風格 */
+:root{
+  --bg:#f4feea; --card:#ffffff; --ink:#333333; --mute:#6b6b6b; --line:#cbcbcb;
+  --hero:#eaf9d6; --pink:#cc3366; --pink-soft:#fff0f0; --star:#ffd24a; --good:#2f8f4e; --bad:#cc3366;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-head:"Zen Maru Gothic","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17211a; --card:#1f2b22; --ink:#eef3ea; --mute:#a5b4a8; --line:#3b4b3f;
+  --hero:#26362a; --pink:#ff7fa5; --pink-soft:#3a2830; --star:#ffd24a; --good:#74d28f; --bad:#ff7fa5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17211a; --card:#1f2b22; --ink:#eef3ea; --mute:#a5b4a8; --line:#3b4b3f;
+  --hero:#26362a; --pink:#ff7fa5; --pink-soft:#3a2830; --star:#ffd24a; --good:#74d28f; --bad:#ff7fa5; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6}
+.col{max-width:560px;margin:0 auto;background:var(--card);border-inline:2px solid var(--ink);min-height:100vh;min-height:100dvh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:2px solid var(--ink);background:var(--card)}
+header small{display:block;font-size:.7rem;letter-spacing:.2em;color:var(--mute)}
+header h1{margin:0;font-family:var(--f-head);font-weight:900;font-size:1.35rem;letter-spacing:.18em}
+.pill{border:2px solid var(--ink);background:var(--card);border-radius:99px;padding:6px 14px;font-size:.8rem;font-weight:500}
+.pill:active{background:var(--pink-soft)}
+.hero{background:var(--hero);padding:26px 18px 6px;text-align:center}
+.hero .team{font-family:var(--f-head);font-weight:700;letter-spacing:.2em;margin:0}
+.big{display:flex;align-items:center;justify-content:center;gap:10px}
+.big svg{width:84px;height:84px;flex:none}
+.big b{font-family:var(--f-head);font-weight:900;font-size:4.2rem;line-height:1;font-variant-numeric:tabular-nums}
+.big span{align-self:flex-end;font-weight:700;padding-bottom:10px}
+.who{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+.who li{background:var(--card);border:2px solid var(--ink);border-radius:99px;padding:2px 14px;font-size:.85rem}
+.who b{font-variant-numeric:tabular-nums}
+.next{margin:16px auto 0;max-width:380px}
+.next p{margin:0 0 6px;font-size:.9rem}
+.bar{height:16px;background:var(--card);border:2px solid var(--ink);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--star);border-right:2px solid var(--ink);transition:width .4s}
+.bar i[style*="width:0%"]{border-right:0}
+.cloud{height:22px;background:var(--hero);background-image:radial-gradient(circle at 50% 100%,var(--card) 13px,transparent 14px);background-size:30px 22px;background-repeat:repeat-x;margin-top:-1px}
+main{padding:8px 18px 56px;display:flex;flex-direction:column;gap:34px}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+h2{font-family:var(--f-head);font-weight:900;font-size:1.25rem;text-align:center;margin:0 auto;padding-bottom:12px;letter-spacing:.12em;width:fit-content;position:relative}
+h2::after{content:"";position:absolute;left:15%;right:15%;bottom:0;border-bottom:3px dotted var(--ink)}
+h3{font-family:var(--f-head);font-weight:900;font-size:1rem;margin:0 0 8px;letter-spacing:.1em;display:flex;align-items:center;gap:8px}
+h3::before{content:"";width:12px;height:12px;border:2px solid var(--ink);border-radius:50%;background:var(--star)}
+.lead{margin:0;text-align:center;font-size:.9rem;color:var(--mute)}
+.lbl{font-size:.8rem;color:var(--mute);letter-spacing:.1em;margin:0 0 6px;font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg button{border:2px solid var(--ink);background:var(--card);border-radius:99px;padding:6px 16px;min-height:42px;min-width:48px;font-weight:700;font-variant-numeric:tabular-nums}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.panel{border:2px solid var(--ink);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--card)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+input[type=text],input[type=number],select,textarea{background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;min-height:44px;min-width:0}
+textarea{width:100%;min-height:96px;font-size:.8rem;font-family:ui-monospace,Consolas,monospace;resize:vertical}
+.grow{flex:1 1 150px}
+.btn{border:2px solid var(--ink);border-radius:99px;padding:8px 20px;min-height:44px;font-weight:700;background:var(--card)}
+.btn.add{background:var(--star);color:#333}
+.btn.sub{background:var(--pink);color:#fff}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.cond{display:flex;align-items:center;gap:10px;border:2px solid var(--ink);border-radius:14px;padding:8px 8px 8px 14px}
+.cond .name{flex:1;min-width:0;overflow-wrap:anywhere}
+.amt{font-family:var(--f-head);font-weight:900;font-size:1.1rem;font-variant-numeric:tabular-nums}
+.amt.p{color:var(--good)}.amt.m{color:var(--bad)}
+.x{background:none;border:0;color:var(--mute);font-size:1.2rem;line-height:1;width:34px;height:34px;border-radius:50%;flex:none}
+.x:hover{background:var(--pink-soft)}
+.reward{display:flex;align-items:center;gap:12px;border:2px solid var(--ink);border-radius:18px;padding:12px 8px 12px 14px;background:var(--card)}
+.reward.ok{background:var(--pink-soft)}
+.cost{flex:none;width:68px;text-align:center;font-family:var(--f-head);font-weight:900;font-size:1.7rem;line-height:1;font-variant-numeric:tabular-nums}
+.cost small{display:block;font-size:.7rem;font-weight:700;letter-spacing:.1em}
+.rn{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.rn em{display:block;font-style:normal;font-size:.78rem;color:var(--mute)}
+.log li{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;padding:10px 0;border-bottom:2px dotted var(--line)}
+.tag{flex:none;font-size:.78rem;border:2px solid var(--ink);border-radius:99px;padding:0 10px;font-weight:500}
+.tag.cat{border-color:var(--line);color:var(--mute)}
+.why{flex:1 1 120px;min-width:0;overflow-wrap:anywhere}
+.time{flex:none;font-size:.75rem;color:var(--mute)}
+.undo{background:none;border:0;color:var(--mute);font-size:.78rem;text-decoration:underline;padding:6px}
+.note{font-size:.8rem;color:var(--mute);text-align:center;margin:0}
+.month{display:flex;align-items:center;justify-content:center;gap:12px}
+.month b{font-family:var(--f-head);font-weight:900;font-size:1.1rem;min-width:7.5em;text-align:center}
+.month button{width:44px;height:44px;border:2px solid var(--ink);border-radius:50%;background:var(--card);font-size:1.1rem;font-weight:700}
+.month button:disabled{opacity:.3;cursor:not-allowed}
+.sum{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none;font-size:.85rem}
+.sum li{border:2px solid var(--ink);border-radius:99px;padding:0 12px}
+.done{display:flex;align-items:center;gap:12px;border:2px solid var(--ink);border-radius:14px;padding:10px 8px 10px 14px}
+.done .d{flex:none;font-size:.78rem;color:var(--mute);width:5.2em}
+.done .rn{font-weight:500}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--card);padding:10px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:.25s;max-width:calc(100% - 32px);text-align:center;z-index:30}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.modal[hidden]{display:none}
+.mbox{background:var(--card);border:3px solid var(--ink);border-radius:20px;padding:22px 20px 18px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:18px;text-align:center}
+.mbox p{margin:0;font-weight:500;overflow-wrap:anywhere}
+.mbox .row{justify-content:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="col">
+  <header>
+    <div><small>許願 ＆ 許諾</small><h1>星星獎勵榜</h1></div>
+    <button class="pill" id="reset" type="button">還原示範</button>
+  </header>
+
+  <div class="hero">
+    <p class="team">兩個人一起存的星星</p>
+    <div class="big">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M50 8l12 27 29 3-22 20 7 29-26-15-26 15 7-29L9 38l29-3z" fill="var(--star)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="41" cy="48" r="3" fill="var(--ink)"/><circle cx="59" cy="48" r="3" fill="var(--ink)"/>
+        <path d="M42 58q8 8 16 0" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
+        <ellipse cx="35" cy="56" rx="4" ry="2.5" fill="var(--pink)" opacity=".5"/><ellipse cx="65" cy="56" rx="4" ry="2.5" fill="var(--pink)" opacity=".5"/>
+      </svg>
+      <b id="total">0</b><span>顆</span>
+    </div>
+    <ul class="who" id="who"></ul>
+    <div class="next" id="next"></div>
+  </div>
+  <div class="cloud"></div>
+
+  <main>
+    <section>
+      <h2>給星星</h2>
+      <div class="panel">
+        <div><p class="lbl">是誰做到的</p><div class="seg" id="sWho"></div></div>
+        <div><p class="lbl">星星數量</p><div class="seg"><span class="seg" id="sAmt"></span><input id="amtCustom" type="number" min="1" max="99999" inputmode="numeric" placeholder="任填" aria-label="自訂星星數" style="width:90px"></div></div>
+        <div><p class="lbl">原因類別</p><div class="seg" id="sCat"></div></div>
+        <div class="row">
+          <input class="grow" id="why" type="text" maxlength="24" placeholder="說明（可不填）" aria-label="說明">
+          <button class="btn add" type="button" data-act="manual" data-s="1">加星星</button>
+          <button class="btn sub" type="button" data-act="manual" data-s="-1">扣星星</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>加分原因</h2>
+      <p class="lead">按「給」就把這條的星星，記在上面選的人（許願、許諾或兩人一起）身上。</p>
+      <div id="conds"></div>
+      <form class="panel" id="condForm">
+        <p class="lbl" style="margin:0">新增一條原因</p>
+        <div class="row">
+          <select id="cCat" aria-label="類別"></select>
+          <input class="grow" id="cName" type="text" maxlength="24" placeholder="例如：自己整理書包" aria-label="原因名稱" required>
+        </div>
+        <div class="row">
+          <select id="cSign" aria-label="加或扣"><option value="1">加</option><option value="-1">扣</option></select>
+          <input id="cAmt" type="number" min="1" max="99999" inputmode="numeric" value="5" aria-label="星星數" style="width:90px" required>
+          <button class="btn" type="submit">新增</button>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h2>兌換獎勵</h2>
+      <ul class="items" id="rewards"></ul>
+      <form class="panel" id="rForm">
+        <p class="lbl" style="margin:0" id="rLbl">新增兌換項目</p>
+        <div class="row">
+          <input id="rCost" type="number" min="1" max="99999" inputmode="numeric" placeholder="星星數" aria-label="需要的星星數" style="width:110px" required>
+          <input class="grow" id="rName" type="text" maxlength="28" placeholder="例如：選一本書" aria-label="獎勵內容" required>
+        </div>
+        <div class="row">
+          <button class="btn" type="submit" id="rSubmit">新增</button>
+          <button class="btn" type="button" id="rCancel" hidden>取消修改</button>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h2>已兌換清單</h2>
+      <ul class="items" id="done"></ul>
+    </section>
+
+    <section>
+      <h2>每月紀錄</h2>
+      <div class="month">
+        <button type="button" id="mPrev" aria-label="上個月">‹</button>
+        <b id="mLabel"></b>
+        <button type="button" id="mNext" aria-label="下個月">›</button>
+      </div>
+      <ul class="sum" id="mSum"></ul>
+      <ul class="items log" id="list"></ul>
+    </section>
+
+    <section>
+      <h2>資料備份</h2>
+      <p class="lead">資料只存在這個瀏覽器。建議定期產生備份碼，貼到記事本或 LINE 的 Keep 存起來。</p>
+      <div class="panel">
+        <div class="row">
+          <button class="btn" type="button" id="bkMake">產生備份碼</button>
+          <button class="btn" type="button" id="bkCopy">複製</button>
+        </div>
+        <textarea id="bk" aria-label="備份碼" placeholder="按「產生備份碼」會顯示在這裡；要還原時把備份碼貼在這裡" spellcheck="false"></textarea>
+        <button class="btn sub" type="button" id="bkRestore">用這段備份碼還原</button>
+        <p class="note">還原會取代目前所有資料。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mMsg" hidden>
+  <div class="mbox">
+    <p id="mMsg"></p>
+    <div class="row">
+      <button class="btn" type="button" id="mNo">取消</button>
+      <button class="btn add" type="button" id="mYes">確定</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  var KEY="star-board-v3",OLD="star-board-v2";
+  var AMTS=[1,5,10,50,100];
+  var CATS=["生活習慣","學習","家事","行為","特殊獎勵"];
+  var WHO=[{id:"wish",n:"許願"},{id:"nuo",n:"許諾"},{id:"both",n:"兩人一起"}];
+  var pick={who:"wish",amt:5,cat:"生活習慣"};
+  var now0=new Date();
+  var view={y:now0.getFullYear(),m:now0.getMonth()};
+  var st,pending=null,editId=null;
+  function $(id){return document.getElementById(id)}
+  function nameOf(w){return w==="team"?"全組":WHO.filter(function(x){return x.id===w})[0].n}
+  function p2(n){return n<10?"0"+n:""+n}
+
+  function demo(){
+    var n=Date.now(),d=new Date(),ms=new Date(d.getFullYear(),d.getMonth(),1).getTime(),day=86400000;
+    function cur(f){return ms+(n-ms)*f}
+    function last(k){return ms-k*day}
+    return {
+      conds:[
+        {id:"c1",cat:"生活習慣",n:"自己刷牙",s:1},{id:"c2",cat:"生活習慣",n:"準時睡覺",s:5},{id:"c3",cat:"生活習慣",n:"賴床不起",s:-5},
+        {id:"c4",cat:"學習",n:"認真寫完功課",s:10},{id:"c5",cat:"學習",n:"主動閱讀",s:5},
+        {id:"c6",cat:"家事",n:"主動收玩具",s:5},{id:"c7",cat:"家事",n:"幫忙做家事",s:10},
+        {id:"c8",cat:"行為",n:"有禮貌",s:5},{id:"c9",cat:"行為",n:"亂發脾氣",s:-10},
+        {id:"c10",cat:"特殊獎勵",n:"考試或比賽進步",s:50}
+      ],
+      rewards:[{id:"r1",c:100,n:"去醬泥熊買零食"},{id:"r2",c:500,n:"選一個地方出去玩"}],
+      log:[
+        {id:"l1",w:"wish",d:50,cat:"學習",r:"考試進步",t:last(12)},
+        {id:"l2",w:"nuo",d:50,cat:"家事",r:"幫忙做家事",t:last(9)},
+        {id:"l3",w:"both",d:20,cat:"行為",r:"一起有禮貌",t:last(6)},
+        {id:"l4",w:"team",d:-100,k:"redeem",cat:"兌換",r:"兌換：去醬泥熊買零食",rn:"去醬泥熊買零食",t:last(3)},
+        {id:"l5",w:"wish",d:50,cat:"特殊獎勵",r:"考試或比賽進步",t:cur(.1)},
+        {id:"l6",w:"nuo",d:50,cat:"家事",r:"幫忙做家事",t:cur(.2)},
+        {id:"l7",w:"both",d:10,cat:"家事",r:"一起整理房間",t:cur(.3)},
+        {id:"l8",w:"wish",d:5,cat:"生活習慣",r:"準時睡覺",t:cur(.4)},
+        {id:"l9",w:"nuo",d:10,cat:"學習",r:"認真寫完功課",t:cur(.5)},
+        {id:"l10",w:"nuo",d:-5,cat:"生活習慣",r:"賴床不起",t:cur(.6)},
+        {id:"l11",w:"wish",d:10,cat:"學習",r:"認真寫完功課",t:cur(.8)},
+        {id:"l12",w:"nuo",d:5,cat:"行為",r:"有禮貌",t:cur(.9)}
+      ]};
+  }
+  var GUESS={"主動收玩具":"家事","幫忙做家事":"家事","認真寫完功課":"學習","亂發脾氣":"行為","賴床不起":"生活習慣","準時睡覺":"生活習慣","自己刷牙":"生活習慣"};
+  function migrate(s){
+    s.conds.forEach(function(c){if(!c.cat)c.cat=GUESS[c.n]||"生活習慣"});
+    s.rewards.forEach(function(r){if(r.n==="選10元以下糖果")r.n="去醬泥熊買零食"});
+    s.log.forEach(function(x){
+      if(!x.k&&x.w==="team"&&/^兌換：/.test(x.r)){x.k="redeem";x.rn=x.r.replace(/^兌換：/,"");x.cat="兌換"}
+      if(!x.cat)x.cat="生活習慣";
+    });
+    return s;
+  }
+  function valid(s){return s&&Array.isArray(s.log)&&Array.isArray(s.conds)&&Array.isArray(s.rewards)}
+  function load(){
+    try{var s=JSON.parse(localStorage.getItem(KEY));if(valid(s))return migrate(s)}catch(e){}
+    try{var o=JSON.parse(localStorage.getItem(OLD));if(valid(o))return migrate(o)}catch(e){}
+    return demo();
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+  function total(){return st.log.reduce(function(a,x){return a+x.d},0)}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function uid(){return "i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+  function ymd(t){var d=new Date(t);return d.getFullYear()+"/"+p2(d.getMonth()+1)+"/"+p2(d.getDate())}
+  function when(t){
+    var m=Math.round((Date.now()-t)/60000);
+    if(m<1)return"剛剛";if(m<60)return m+" 分鐘前";
+    var h=Math.round(m/60);if(h<24)return h+" 小時前";
+    var d=new Date(t);return(d.getMonth()+1)+"/"+d.getDate()+" "+p2(d.getHours())+":"+p2(d.getMinutes());
+  }
+  var tt;
+  function toast(msg){var e=$("toast");e.textContent=msg;e.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){e.classList.remove("on")},2000)}
+  function ask(msg,cb){pending=cb;$("mMsg").textContent=msg;$("modal").hidden=false;$("mNo").focus()}
+  function closeAsk(){$("modal").hidden=true;pending=null}
+
+  function give(w,d,r,cat,extra){
+    if(!r)r=d>0?"表現很棒":"需要改進";
+    if(total()+d<0){toast("組裡的星星不夠扣了");return false}
+    var e={id:uid(),w:w,d:d,cat:cat,r:r,t:Date.now()};
+    if(extra)for(var k in extra)e[k]=extra[k];
+    st.log.push(e);
+    var now=new Date();view={y:now.getFullYear(),m:now.getMonth()};
+    save();render();
+    toast(nameOf(w)+(d>0?" +":" −")+Math.abs(d)+" 顆："+r);
+    return true;
+  }
+
+  function renderPick(){
+    $("sWho").innerHTML=WHO.map(function(x){return '<button type="button" data-act="who" data-v="'+x.id+'" aria-pressed="'+(pick.who===x.id)+'">'+x.n+'</button>'}).join("");
+    $("sAmt").innerHTML=AMTS.map(function(a){return '<button type="button" data-act="amt" data-v="'+a+'" aria-pressed="'+(pick.amt===a&&!$("amtCustom").value)+'">'+a+'</button>'}).join("");
+    $("sCat").innerHTML=CATS.map(function(c){return '<button type="button" data-act="cat" data-v="'+c+'" aria-pressed="'+(pick.cat===c)+'">'+c+'</button>'}).join("");
+  }
+
+  function renderMonth(){
+    var cy=now0.getFullYear(),cm=now0.getMonth();
+    $("mLabel").textContent=view.y+" 年 "+(view.m+1)+" 月";
+    $("mNext").disabled=(view.y*12+view.m>=cy*12+cm);
+    var rows=st.log.filter(function(x){var d=new Date(x.t);return d.getFullYear()===view.y&&d.getMonth()===view.m}).sort(function(a,b){return b.t-a.t});
+    var earn=0,lose=0,spend=0;
+    rows.forEach(function(x){if(x.d>0)earn+=x.d;else if(x.k==="redeem")spend-=x.d;else lose-=x.d});
+    $("mSum").innerHTML='<li>賺到 <b>'+earn+'</b></li><li>扣掉 <b>'+lose+'</b></li><li>兌換用掉 <b>'+spend+'</b></li><li>共 '+rows.length+' 筆</li>';
+    $("list").innerHTML=rows.map(function(x){
+      return '<li><span class="tag">'+nameOf(x.w)+'</span><span class="tag cat">'+esc(x.cat||"")+'</span><span class="why">'+esc(x.r)+'</span><span class="time">'+when(x.t)+'</span>'+
+        '<span class="amt '+(x.d>0?"p":"m")+'">'+(x.d>0?"+":"−")+Math.abs(x.d)+'</span>'+
+        '<button type="button" class="undo" data-act="undo" data-id="'+x.id+'" aria-label="撤銷這筆紀錄">撤銷</button></li>';
+    }).join("")||'<li class="note">這個月還沒有紀錄。</li>';
+  }
+
+  function render(){
+    var t=total();
+    $("total").textContent=t;
+    var by={wish:0,nuo:0,both:0};
+    st.log.forEach(function(x){if(x.d>0&&by[x.w]!==undefined)by[x.w]+=x.d});
+    $("who").innerHTML='<li>許願 賺了 <b>'+by.wish+'</b></li><li>許諾 賺了 <b>'+by.nuo+'</b></li><li>一起 賺了 <b>'+by.both+'</b></li>';
+
+    var sorted=st.rewards.slice().sort(function(a,b){return a.c-b.c});
+    var nxt=sorted.filter(function(r){return r.c>t})[0];
+    if(nxt){
+      var prev=sorted.filter(function(r){return r.c<=t}).pop();
+      var base=prev?prev.c:0,pct=Math.max(0,Math.min(100,(t-base)/(nxt.c-base)*100));
+      $("next").innerHTML='<p>下一個：'+esc(nxt.n)+'（還差 '+(nxt.c-t)+' 顆）</p><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+nxt.c+'" aria-valuenow="'+t+'"><i style="width:'+pct+'%"></i></div>';
+    }else{
+      $("next").innerHTML='<p>'+(sorted.length?"所有獎勵都可以兌換了！":"先到下面新增一個兌換項目吧")+'</p>';
+    }
+
+    $("conds").innerHTML=CATS.map(function(cat){
+      var list=st.conds.filter(function(c){return c.cat===cat});
+      if(!list.length)return"";
+      return '<div style="margin-bottom:18px"><h3>'+cat+'</h3><ul class="items">'+list.map(function(c){
+        var p=c.s>0;
+        return '<li class="cond"><span class="name">'+esc(c.n)+'</span><span class="amt '+(p?"p":"m")+'">'+(p?"+":"−")+Math.abs(c.s)+'</span>'+
+          '<button type="button" class="btn '+(p?"add":"sub")+'" data-act="cond" data-id="'+c.id+'">給</button>'+
+          '<button type="button" class="x" data-act="delCond" data-id="'+c.id+'" aria-label="刪除 '+esc(c.n)+'">×</button></li>';
+      }).join("")+'</ul></div>';
+    }).join("")||'<p class="note">還沒有原因，從下面新增第一條。</p>';
+
+    $("rewards").innerHTML=sorted.map(function(r){
+      var ok=t>=r.c;
+      return '<li class="reward'+(ok?" ok":"")+'"><div class="cost">'+r.c+'<small>顆星星</small></div>'+
+        '<div class="rn">'+esc(r.n)+'<em>'+(ok?"可以兌換":"還差 "+(r.c-t)+" 顆")+'</em></div>'+
+        '<button type="button" class="btn add" data-act="redeem" data-id="'+r.id+'"'+(ok?"":" disabled")+'>兌換</button>'+
+        '<button type="button" class="undo" data-act="editRew" data-id="'+r.id+'" aria-label="修改 '+esc(r.n)+'">修改</button>'+
+        '<button type="button" class="x" data-act="delRew" data-id="'+r.id+'" aria-label="刪除 '+esc(r.n)+'">×</button></li>';
+    }).join("")||'<li class="note">還沒有兌換項目。</li>';
+
+    var done=st.log.filter(function(x){return x.k==="redeem"}).sort(function(a,b){return b.t-a.t});
+    $("done").innerHTML=done.map(function(x){
+      return '<li class="done"><span class="d">'+ymd(x.t)+'</span><span class="rn">'+esc(x.rn||x.r)+'</span><span class="amt m">−'+Math.abs(x.d)+'</span>'+
+        '<button type="button" class="undo" data-act="undo" data-id="'+x.id+'" aria-label="撤銷這次兌換">撤銷</button></li>';
+    }).join("")||'<li class="note">還沒有兌換過，集滿星星就能換。</li>';
+
+    renderMonth();
+  }
+
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("button[data-act]");if(!b)return;
+    var a=b.getAttribute("data-act"),id=b.getAttribute("data-id");
+    if(a==="who"){pick.who=b.getAttribute("data-v");renderPick()}
+    else if(a==="amt"){pick.amt=parseInt(b.getAttribute("data-v"),10);$("amtCustom").value="";renderPick()}
+    else if(a==="cat"){pick.cat=b.getAttribute("data-v");renderPick()}
+    else if(a==="manual"){
+      if(give(pick.who,pick.amt*parseInt(b.getAttribute("data-s"),10),$("why").value.trim()||pick.cat,pick.cat))$("why").value="";
+    }else if(a==="cond"){
+      var c=st.conds.filter(function(x){return x.id===id})[0];if(c)give(pick.who,c.s,c.n,c.cat);
+    }else if(a==="delCond"){
+      var dc=st.conds.filter(function(x){return x.id===id})[0];
+      if(dc)ask("要刪除「"+dc.n+"」這條原因嗎？",function(){st.conds=st.conds.filter(function(x){return x.id!==id});save();render();toast("已刪除")});
+    }else if(a==="delRew"){
+      var dr=st.rewards.filter(function(x){return x.id===id})[0];
+      if(dr)ask("要刪除兌換項目「"+dr.n+"」嗎？",function(){st.rewards=st.rewards.filter(function(x){return x.id!==id});save();render();toast("已刪除")});
+    }else if(a==="editRew"){
+      var er=st.rewards.filter(function(x){return x.id===id})[0];
+      if(er){editId=id;$("rCost").value=er.c;$("rName").value=er.n;setEdit(true);$("rForm").scrollIntoView({block:"center"});$("rName").focus()}
+    }else if(a==="redeem"){
+      var r=st.rewards.filter(function(x){return x.id===id})[0];
+      if(r)ask("要兌換「"+r.n+"」嗎？會扣 "+r.c+" 顆星星，兌換後剩 "+(total()-r.c)+" 顆。",function(){
+        give("team",-r.c,"兌換："+r.n,"兌換",{k:"redeem",rn:r.n});
+      });
+    }else if(a==="undo"){
+      var u=st.log.filter(function(x){return String(x.id)===id})[0];
+      if(u)ask("要撤銷「"+u.r+"」（"+(u.d>0?"+":"−")+Math.abs(u.d)+" 顆）這筆紀錄嗎？",function(){
+        if(total()-u.d<0){toast("撤銷後星星會變成負數，無法撤銷");return}
+        st.log=st.log.filter(function(x){return String(x.id)!==id});save();render();toast("已撤銷");
+      });
+    }
+  });
+
+  $("mYes").addEventListener("click",function(){var f=pending;closeAsk();if(f)f()});
+  $("mNo").addEventListener("click",closeAsk);
+  $("modal").addEventListener("click",function(e){if(e.target===$("modal"))closeAsk()});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("modal").hidden)closeAsk()});
+
+  $("amtCustom").addEventListener("input",function(e){
+    var v=parseInt(e.target.value,10);
+    if(v>0)pick.amt=v;
+    renderPick();
+  });
+  $("mPrev").addEventListener("click",function(){view.m--;if(view.m<0){view.m=11;view.y--}renderMonth()});
+  $("mNext").addEventListener("click",function(){view.m++;if(view.m>11){view.m=0;view.y++}renderMonth()});
+
+  $("condForm").addEventListener("submit",function(e){
+    e.preventDefault();
+    var n=$("cName").value.trim(),amt=parseInt($("cAmt").value,10);if(!n||!(amt>0))return;
+    st.conds.push({id:uid(),cat:$("cCat").value,n:n,s:parseInt($("cSign").value,10)*amt});
+    $("cName").value="";save();render();toast("已新增原因");
+  });
+  $("rForm").addEventListener("submit",function(e){
+    e.preventDefault();
+    var c=parseInt($("rCost").value,10),n=$("rName").value.trim();
+    if(!(c>0)||!n)return;
+    if(editId){
+      var er=st.rewards.filter(function(x){return x.id===editId})[0];
+      if(er){er.c=c;er.n=n}
+      toast("已儲存修改");
+    }else{
+      st.rewards.push({id:uid(),c:c,n:n});toast("已新增兌換項目");
+    }
+    $("rCost").value="";$("rName").value="";setEdit(false);save();render();
+  });
+  $("rCancel").addEventListener("click",function(){$("rCost").value="";$("rName").value="";setEdit(false)});
+  function setEdit(on){
+    if(!on)editId=null;
+    $("rLbl").textContent=on?"修改兌換項目":"新增兌換項目";
+    $("rSubmit").textContent=on?"儲存修改":"新增";
+    $("rCancel").hidden=!on;
+  }
+  $("reset").addEventListener("click",function(){
+    ask("要還原成示範資料嗎？目前所有資料都會被取代。",function(){st=demo();save();render();toast("已還原示範資料")});
+  });
+
+  $("bkMake").addEventListener("click",function(){
+    $("bk").value=JSON.stringify({app:"star-board",v:3,data:st});
+    $("bk").select();toast("已產生備份碼，記得複製存起來");
+  });
+  $("bkCopy").addEventListener("click",function(){
+    var el=$("bk");
+    if(!el.value){toast("請先產生備份碼");return}
+    el.select();
+    var ok=function(){toast("已複製")},fail=function(){toast("請長按備份碼全選後複製")};
+    try{navigator.clipboard.writeText(el.value).then(ok,function(){try{document.execCommand("copy")?ok():fail()}catch(x){fail()}})}
+    catch(x){try{document.execCommand("copy")?ok():fail()}catch(y){fail()}}
+  });
+  $("bkRestore").addEventListener("click",function(){
+    var raw=$("bk").value.trim(),obj;
+    if(!raw){toast("請先把備份碼貼在上面的框裡");return}
+    try{obj=JSON.parse(raw)}catch(e){toast("備份碼格式不正確");return}
+    var data=obj&&obj.data?obj.data:obj;
+    if(!valid(data)){toast("這不是星星獎勵榜的備份碼");return}
+    ask("要用這段備份碼還原嗎？目前的資料會被取代（共 "+data.log.length+" 筆紀錄）。",function(){
+      st=migrate(data);save();render();toast("已還原備份");
+    });
+  });
+
+  $("cCat").innerHTML=CATS.map(function(c){return '<option>'+c+'</option>'}).join("");
+  st=load();renderPick();render();
+})();
+</script>
+</body></html>
