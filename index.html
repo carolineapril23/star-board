@@ -90,6 +90,9 @@ ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .done{display:flex;align-items:center;gap:12px;border:2px solid var(--ink);border-radius:14px;padding:10px 8px 10px 14px}
 .done .d{flex:none;font-size:.78rem;color:var(--mute);width:5.2em}
 .done .rn{font-weight:500}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-size:.75rem;border:2px solid var(--ink);border-radius:99px;padding:0 10px;white-space:nowrap}
+.chip.ok{background:var(--star);color:#333}.chip.bad{background:var(--pink);color:#fff}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--card);padding:10px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:.25s;max-width:calc(100% - 32px);text-align:center;z-index:30}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px;z-index:20}
@@ -103,7 +106,7 @@ ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 <div class="col">
   <header>
     <div><small>許願 ＆ 許諾</small><h1>星星獎勵榜</h1></div>
-    <button class="pill" id="reset" type="button">還原示範</button>
+    <div class="hdr-r"><span class="chip" id="syncChip">未同步</span><button class="pill" id="reset" type="button">還原示範</button></div>
   </header>
 
   <div class="hero">
@@ -185,6 +188,23 @@ ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
       </div>
       <ul class="sum" id="mSum"></ul>
       <ul class="items log" id="list"></ul>
+    </section>
+
+    <section>
+      <h2>跨手機同步</h2>
+      <p class="lead">兩支手機輸入同一組「家庭密碼」，就會看到同一份星星和紀錄。</p>
+      <div class="panel">
+        <p class="note" id="syncState" style="text-align:left"></p>
+        <div class="row" id="syncSetup">
+          <input class="grow" id="syncCode" type="text" maxlength="100" placeholder="家庭密碼（至少 6 個字）" aria-label="家庭密碼" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button class="btn add" type="button" id="syncStart">開始同步</button>
+        </div>
+        <div class="row" id="syncOn" hidden>
+          <button class="btn" type="button" id="syncNow">立即同步</button>
+          <button class="btn" type="button" id="syncStop">停止同步</button>
+        </div>
+        <p class="note" style="text-align:left">密碼請設別人猜不到的，只告訴家人。知道密碼的人就能看到和修改資料，忘記密碼無法找回。</p>
+      </div>
     </section>
 
     <section>
@@ -272,7 +292,56 @@ ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
     try{var o=JSON.parse(localStorage.getItem(OLD));if(valid(o))return migrate(o)}catch(e){}
     return demo();
   }
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+  var SB_URL="https://wusgtdzllctcznownadj.supabase.co";
+  var SB_KEY="sb_publishable_DUJx_RGgZtSJOZA4V2uk_w_nPAaIY_D";
+  var sync={code:"",ver:0,dirty:false},seq=0,busy=false,again=false;
+  function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+  sync.code=lsGet("star-code")||"";sync.ver=parseInt(lsGet("star-ver"),10)||0;sync.dirty=lsGet("star-dirty")==="1";
+  function persistSync(){
+    if(sync.code){lsSet("star-code",sync.code);lsSet("star-ver",String(sync.ver));lsSet("star-dirty",sync.dirty?"1":"0")}
+    else{lsDel("star-code");lsDel("star-ver");lsDel("star-dirty")}
+  }
+  function setChip(txt,cls){var c=$("syncChip");c.textContent=txt;c.className="chip"+(cls?" "+cls:"")}
+  function syncUi(){
+    var on=!!sync.code;
+    $("syncSetup").hidden=on;$("syncOn").hidden=!on;
+    $("syncState").textContent=on?"已開啟同步。這支手機的變動會自動上傳，也會定時載入別支手機的變動。":"目前沒有同步，資料只存在這支手機。";
+    if(!on)setChip("未同步");
+  }
+  function rpc(n,b){
+    return fetch(SB_URL+"/rest/v1/rpc/"+n,{method:"POST",headers:{apikey:SB_KEY,"Content-Type":"application/json"},body:JSON.stringify(b)})
+      .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()});
+  }
+  function push(){
+    if(!sync.code)return;
+    if(busy){again=true;return}
+    busy=true;setChip("同步中…");
+    var mySeq=seq;
+    rpc("star_save",{p_code:sync.code,p_data:st,p_base:sync.ver}).then(function(res){
+      busy=false;
+      if(res.ok){sync.ver=res.version;sync.dirty=(seq!==mySeq);persistSync();setChip("已同步","ok")}
+      else if(res.error==="conflict"&&res.data){
+        st=migrate(res.data);sync.ver=res.version;sync.dirty=false;persistSync();localSave();render();
+        setChip("已同步","ok");notice("別支手機剛更新過資料，已載入最新內容。你剛才的這次操作沒有儲存，請再操作一次。");
+      }else if(res.error==="conflict"){sync.ver=0;again=true}
+      else{setChip("同步失敗","bad");toast("同步失敗，請確認家庭密碼")}
+      if(again){again=false;if(sync.dirty)push()}
+    }).catch(function(){busy=false;sync.dirty=true;persistSync();setChip("離線，稍後重試","bad")});
+  }
+  function pull(){
+    if(!sync.code||busy||!$("modal").hidden)return;
+    if(sync.dirty){push();return}
+    rpc("star_load",{p_code:sync.code}).then(function(res){
+      if(res.found&&res.version>sync.ver&&!sync.dirty&&!busy){
+        st=migrate(res.data);sync.ver=res.version;persistSync();localSave();render();
+      }
+      setChip("已同步","ok");
+    }).catch(function(){setChip("離線，稍後重試","bad")});
+  }
+  function localSave(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+  function save(){localSave();if(sync.code){seq++;sync.dirty=true;persistSync();push()}}
   function total(){return st.log.reduce(function(a,x){return a+x.d},0)}
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
   function uid(){return "i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -467,8 +536,38 @@ ul.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
     });
   });
 
+  $("syncStart").addEventListener("click",function(){
+    var code=$("syncCode").value.trim();
+    if(code.length<6){toast("家庭密碼至少要 6 個字");return}
+    setChip("連線中…");
+    rpc("star_load",{p_code:code}).then(function(res){
+      if(res.error){setChip("未同步");toast("家庭密碼不符合規定");return}
+      if(!res.found){
+        sync.code=code;sync.ver=0;sync.dirty=true;seq++;persistSync();syncUi();push();
+        notice("已開始同步，這支手機的資料已上傳。到別支手機輸入同一組家庭密碼就能看到。");
+      }else{
+        setChip("未同步");
+        var n=(res.data&&res.data.log)?res.data.log.length:0;
+        ask("雲端已有這組密碼的資料（"+n+" 筆紀錄）。要載入雲端資料嗎？這支手機目前的資料會被取代。",function(){
+          sync.code=code;sync.ver=res.version;sync.dirty=false;persistSync();
+          st=migrate(res.data);localSave();render();syncUi();setChip("已同步","ok");
+          notice("已連上同步，載入了雲端資料。");
+        });
+      }
+    }).catch(function(){setChip("未同步");toast("連不上網路，請稍後再試")});
+  });
+  $("syncNow").addEventListener("click",function(){if(sync.dirty)push();else pull();toast("正在同步")});
+  $("syncStop").addEventListener("click",function(){
+    ask("要停止同步嗎？這支手機的資料會保留，但不再和其他手機同步。",function(){
+      sync.code="";sync.ver=0;sync.dirty=false;persistSync();syncUi();toast("已停止同步");
+    });
+  });
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
+  setInterval(pull,30000);
+
   $("cCat").innerHTML=CATS.map(function(c){return '<option>'+c+'</option>'}).join("");
-  st=load();renderPick();render();
+  st=load();renderPick();render();syncUi();
+  if(sync.code){setChip("連線中…");pull()}
 })();
 </script>
 </body></html>
